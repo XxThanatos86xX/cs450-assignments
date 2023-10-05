@@ -173,7 +173,7 @@ const int MS_PER_CYCLE = 10000;		// 10000 milliseconds = 10 seconds
 int		ActiveButton;			// current button that is down
 GLuint	AxesList;				// list to hold the axes
 int		AxesOn;					// != 0 means to draw the axes
-GLuint	BoxList;				// object display list
+GLuint	slinkyList;				// object display list
 int		DebugOn;				// != 0 means to print debugging info
 int		DepthCueOn;				// != 0 means to use intensity depth cueing
 int		DepthBufferOn;			// != 0 means to use the z-buffer
@@ -439,14 +439,14 @@ Display( )
 
 	// draw the box object by calling up its display list:
 
-	glCallList( BoxList );
+	glCallList( slinkyList );
 
 #ifdef DEMO_Z_FIGHTING
 	if( DepthFightingOn != 0 )
 	{
 		glPushMatrix( );
 			glRotatef( 90.f,   0.f, 1.f, 0.f );
-			glCallList( BoxList );
+			glCallList( slinkyList );
 		glPopMatrix( );
 	}
 #endif
@@ -819,49 +819,78 @@ InitLists( )
 
 	// create the object:
 
-	BoxList = glGenLists( 1 );
-	glNewList( BoxList, GL_COMPILE );
+	slinkyList = glGenLists( 1 );
+	glNewList( slinkyList, GL_COMPILE );
 
-
-// here:
-
-	glColor3f(1, 0, 0);
-
-	int NUMSEGS = 10;
+	int NUMSEGS = 1000;
 	int RADIUS = 1;
-	float dang = 2 * M_PI / (float) (NUMSEGS - 1);
+	float dang = 20 * M_PI / (float) (NUMSEGS - 1);
 	float ang = 0;
 
-	glBegin(GL_TRIANGLE_FAN);
-		// for(int i = 0; i < NUMSEGS; i++) {
+	double r = 1;
+	double g = .6;
+	double b = 0;
+	double z = 0;
 
-			glVertex3f( RADIUS*cos(ang), RADIUS*sin(ang), 0 );
+	glTranslatef(0, 0, 0);
+
+	glBegin(GL_LINE_STRIP);
+		for(int i = 0; i < NUMSEGS; i++) {
+			glColor3f(r, g, b);
+			glVertex3f( RADIUS*cos(ang), RADIUS*sin(ang), z );
 			ang += dang;
 
-			glVertex3f( RADIUS*cos(ang), RADIUS*sin(ang), 0 );
-			ang += dang;
+			if (r > 1) {
+				r = 0;
+			}
+			if (g > 1) {
+				g = 0;
+			}
+			if (b > 1) {
+				b = 0;
+			}
 
-			glVertex3f( RADIUS*cos(ang), RADIUS*sin(ang), 0 );
-			ang += dang;
+			z += .002;
 
-			glColor3f(1,1,0);
-			glVertex3f( RADIUS*cos(ang), RADIUS*sin(ang), 0 );
-			ang += dang;
-
-			glColor3f(1,1,1);
-			glVertex3f( RADIUS*cos(ang), RADIUS*sin(ang), 0 );
-			ang += dang;
-
-			glColor3f(0,1,1);
-			glVertex3f( RADIUS*cos(ang), RADIUS*sin(ang), 0 );
-			ang += dang;
-
-
-
-		// }
-
+			if ( (i % 10) == 0) {
+				r += .2;
+				g += .1;
+				b += .3;
+			}
+		}
 
 	glEnd();
+
+	// glTranslatef(0, 0, .25);
+
+
+	// glBegin(GL_LINE_STRIP);
+	// 	for(int i = 0; i < NUMSEGS; i++) {
+	// 		glColor3f(r, g, b);
+	// 		if (ang >= fullCircle) {ang = (int)ang % fullCircle;}
+	// 		glVertex3f( RADIUS*cos(ang), RADIUS*sin(ang), z );
+	// 		ang += dang;
+
+	// 		z += .01;
+
+	// 		if (r > 1) {
+	// 			r = 0;
+	// 		}
+	// 		if (g > 1) {
+	// 			g = 0;
+	// 		}
+	// 		if (b > 1) {
+	// 			b = 0;
+	// 		}
+
+	// 		if ( (i % 10) == 0) {
+	// 			r += .2;
+	// 			g += .3;
+	// 			b += .4;
+	// 		}
+	// 	}
+
+	// glEnd();
 
 		// glBegin( GL_QUADS );
 
