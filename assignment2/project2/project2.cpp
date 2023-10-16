@@ -16,8 +16,6 @@
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
 #include "glut.h"
-#include "CarouselHorse0.10.550"
-
 
 //
 //	The objective is to draw a 3d object and change the color of the axes
@@ -38,7 +36,7 @@
 
 // title of these windows:
 
-const char *WINDOWTITLE = "Project 1 -- Byron Magofna";
+const char *WINDOWTITLE = "Project 2 -- Byron Magofna";
 const char *GLUITITLE   = "User Interface Window";
 
 // what the glui package defines as true and false:
@@ -82,6 +80,12 @@ const float SCROLL_WHEEL_CLICK_FACTOR = 5.f;
 const int LEFT   = 4;
 const int MIDDLE = 2;
 const int RIGHT  = 1;
+
+// global variables for the horse and circle display lists
+const int NUMSEGS = 100;
+const double RADIUS = 2;
+float dang = 2 * M_PI / (float) (NUMSEGS - 1);
+float ang = 0;
 
 // which projection:
 
@@ -173,14 +177,16 @@ const int MS_PER_CYCLE = 10000;		// 10000 milliseconds = 10 seconds
 int		ActiveButton;			// current button that is down
 GLuint	AxesList;				// list to hold the axes
 int		AxesOn;					// != 0 means to draw the axes
-GLuint	slinkyList;				// object display list
+GLuint	displayHorse;			// object display list
+GLuint  circle;					// object display list
 int		DebugOn;				// != 0 means to print debugging info
 int		DepthCueOn;				// != 0 means to use intensity depth cueing
 int		DepthBufferOn;			// != 0 means to use the z-buffer
 int		DepthFightingOn;		// != 0 means to force the creation of z-fighting
 int		MainWindow;				// window id for main graphics window
 int		NowColor;				// index into Colors[ ]
-int		NowProjection;		// ORTHO or PERSP
+int		NowProjection;			// ORTHO or PERSP
+int		nowInOrOut;				// inside or outside perspective
 float	Scale;					// scaling factor
 int		ShadowsOn;				// != 0 means to turn shadows on
 float	Time;					// used for animation, this has a value between 0. and 1.
@@ -202,6 +208,7 @@ void	DoMainMenu( int );
 void	DoProjectMenu( int );
 void	DoRasterString( float, float, float, char * );
 void	DoStrokeString( float, float, float, float, char * );
+void	doInOrOut(int);
 float	ElapsedSeconds( );
 void	InitGraphics( );
 void	InitLists( );
@@ -271,9 +278,11 @@ MulArray3(float factor, float a, float b, float c )
 //#include "osucone.cpp"
 //#include "osutorus.cpp"
 //#include "bmptotexture.cpp"
-//#include "loadobjfile.cpp"
+#include "loadobjfile.cpp"
 //#include "keytime.cpp"
 //#include "glslprogram.cpp"
+#include "CarouselHorse.obj"
+
 
 
 // main program:
@@ -328,11 +337,18 @@ Animate( )
 {
 	// put animation stuff in here -- change some global variables for Display( ) to find:
 
+	// for(int i = 0; i < NUMSEGS; i++) {
+	// 	glTranslatef( RADIUS*cos(ang), 0, RADIUS*sin(ang) );
+	// 	ang += dang;
+	// }
+
 	int ms = glutGet(GLUT_ELAPSED_TIME);
 	ms %= MS_PER_CYCLE;							// makes the value of ms between 0 and MS_PER_CYCLE-1
 	Time = (float)ms / (float)MS_PER_CYCLE;		// makes the value of Time between 0. and slightly less than 1.
 
 	// for example, if you wanted to spin an object in Display( ), you might call: glRotatef( 360.f*Time,   0., 1., 0. );
+
+	glRotatef(360*Time, 0, 1, 0);
 
 	// force a call to Display( ) next time it is convenient:
 
@@ -393,9 +409,13 @@ Display( )
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity( );
 
-	// set the eye position, look-at position, and up-vector:
 
-	gluLookAt( 0.f, 0.f, 3.f,     0.f, 0.f, 0.f,     0.f, 1.f, 0.f );
+	// set the eye position, look-at position, and up-vector:
+	if (nowInOrOut == 0) {
+		gluLookAt( 0, 0, 5,    0, 0, 0,    0, 1, 0 );		// outside view
+	} else {
+		gluLookAt( 0, 0, 0,    1, 0, 0,    0, 1, 0 );		// inside?
+	}
 
 	// rotate the scene:
 
@@ -437,16 +457,63 @@ Display( )
 	glEnable( GL_NORMALIZE );
 
 
-	// draw the box object by calling up its display list:
+	// draw the horse object by calling up its display list:
 
-	glCallList( slinkyList );
+	glCallList( circle );
+
+	glPushMatrix();
+
+	float theta = 45 * sin(3 * (F_2_PI * Time));
+	float theta1 = 30 * sin(2 * (F_2_PI * Time));
+	float theta2 = 90 * sin(5 * (F_2_PI * Time));
+	float theta3 = 60 * sin(4 * (F_2_PI * Time));
+
+
+	// // first horse
+	glRotatef(360*Time, 0, 1, 0);		// rotates horse in circle
+	glRotatef(theta, 1, 0, .5);			// rock and move (up and down) horse
+	glTranslatef(2, 0, 0);
+	glRotatef(90, 0, 1, 0);				// have to turn horse so it's facing the correct way before beginning rotation.
+	glCallList( displayHorse );
+
+	glPopMatrix();						// reset properties/attributes
+	glPushMatrix();
+
+	// // 2nd horse
+	glRotatef(360*Time, 0, 1, 0);		// rotate in circle
+	glRotatef(theta1, .75, 0, 1);			// rock and move (up and down) horse
+	glTranslatef(0, 0, 2);
+	glCallList( displayHorse );
+
+	glPopMatrix();						// reset properties/attributes
+	glPushMatrix();
+
+	// 3rd horse
+	glRotatef(360*Time, 0, 1, 0);		// rotate in circle
+	glRotatef(theta2, 1.33, 0, .66);		// rock and move (up and down) horse
+	glTranslatef(-2, 0, 0);
+	glRotatef(-90, 0, 1, 0);			// have to turn horse so it's facing the correct way before beginning rotation.
+	glCallList( displayHorse );
+
+	glPopMatrix();						// reset properties/attributes
+	glPushMatrix();
+
+	// 4th horse
+	glRotatef(360*Time, 0, 1, 0);		// rotate in circle
+	glRotatef(theta3, .4, 0, 1);		// rock and move (up and down) horse
+	glTranslatef(0, 0, -2);
+	glRotatef(180, 0, 1, 0);			// have to turn horse so it's facing the correct way before beginning rotation.
+	glCallList( displayHorse );
+
+	glPopMatrix();
 
 #ifdef DEMO_Z_FIGHTING
 	if( DepthFightingOn != 0 )
 	{
 		glPushMatrix( );
 			glRotatef( 90.f,   0.f, 1.f, 0.f );
-			glCallList( slinkyList );
+			glCallList( circle );
+			glCallList( displayHorse );
 		glPopMatrix( );
 	}
 #endif
@@ -591,6 +658,13 @@ DoProjectMenu( int id )
 	glutPostRedisplay( );
 }
 
+void doInOrOut(int id) {
+	nowInOrOut = id;
+
+	glutSetWindow( MainWindow);
+	glutPostRedisplay();
+}
+
 
 // use glut to display a string of characters using a raster font:
 
@@ -681,6 +755,10 @@ InitMenus( )
 	glutAddMenuEntry( "Orthographic",  ORTHO );
 	glutAddMenuEntry( "Perspective",   PERSP );
 
+	int viewMenu = glutCreateMenu( doInOrOut);
+	glutAddMenuEntry("Outside", 0);
+	glutAddMenuEntry("Inside", 1);
+
 	int mainmenu = glutCreateMenu( DoMainMenu );
 	glutAddSubMenu(   "Axes",          axesmenu);
 	glutAddSubMenu(   "Axis Colors",   colormenu);
@@ -695,6 +773,7 @@ InitMenus( )
 
 	glutAddSubMenu(   "Depth Cue",     depthcuemenu);
 	glutAddSubMenu(   "Projection",    projmenu );
+	glutAddSubMenu(	  "View",		   viewMenu);
 	glutAddMenuEntry( "Reset",         RESET );
 	glutAddSubMenu(   "Debug",         debugmenu);
 	glutAddMenuEntry( "Quit",          QUIT );
@@ -812,133 +891,43 @@ InitLists( )
 	if (DebugOn != 0)
 		fprintf(stderr, "Starting InitLists.\n");
 
-	float dx = BOXSIZE / 2.f;
-	float dy = BOXSIZE / 2.f;
-	float dz = BOXSIZE / 2.f;
-	glutSetWindow( MainWindow );
 
-	// create the object:
 
-	slinkyList = glGenLists( 1 );
-	glNewList( slinkyList, GL_COMPILE );
-
-	int NUMSEGS = 1000;
-	double RADIUS = 0.5;
-	float dang = 30 * M_PI / (float) (NUMSEGS - 1);
-	float ang = 0;
-
-	double r = 1;
-	double g = .6;
-	double b = 0;
-	double z = 0;
-
-	glTranslatef(0, 0, 0);
-
-	glBegin(GL_LINE_STRIP);
-		for(int i = 0; i < NUMSEGS; i++) {
-			glColor3f(r, g, b);
-			glVertex3f( RADIUS*cos(ang), RADIUS*sin(ang), z );
-			ang += dang;
-
-			if (r > 1) {
-				r = 0;
+	circle = glGenLists( 1 );
+	glNewList( circle, GL_COMPILE);
+		glPushMatrix();
+		glColor3f(0, 1, 0);
+		glBegin(GL_LINE_STRIP);
+			for(int i = 0; i < NUMSEGS; i++) {
+				glVertex3f( RADIUS*cos(ang), 0, RADIUS*sin(ang) );
+				ang += dang;
 			}
-			if (g > 1) {
-				g = 0;
-			}
-			if (b > 1) {
-				b = 0;
-			}
-
-			z += .0015;
-
-			if ( (i % 10) == 0) {
-				r += .2;
-				g += .1;
-				b += .3;
-			}
-		}
+		glEnd();
+	glPopMatrix();
+	glEndList();
 
 	glEnd();
+	glRotatef(360, 0, 0, 0);
 
-	// glTranslatef(0, 0, .25);
+	displayHorse = glGenLists( 1 );
+	glNewList( displayHorse, GL_COMPILE );
+		glPushMatrix( );
+			
+			glRotatef(90.f, 0., 1., 0.);
+			glTranslatef( 0.f, -1.1f, 0.f);
+			glColor3f( 1.f, 1.f, 0.f);		// yellow
 
+			glBegin( GL_LINES );
+				for( int i=0; i < HORSEnedges; i++ ) {
+					struct point p0 = HORSEpoints[ HORSEedges[i].p0 ];
+					struct point p1 = HORSEpoints[ HORSEedges[i].p1 ];
+					glVertex3f( p0.x, p0.y, p0.z );
+					glVertex3f( p1.x, p1.y, p1.z );
+				}
+			glEnd();
+		glPopMatrix();
+	glEndList();
 
-	// glBegin(GL_LINE_STRIP);
-	// 	for(int i = 0; i < NUMSEGS; i++) {
-	// 		glColor3f(r, g, b);
-	// 		if (ang >= fullCircle) {ang = (int)ang % fullCircle;}
-	// 		glVertex3f( RADIUS*cos(ang), RADIUS*sin(ang), z );
-	// 		ang += dang;
-
-	// 		z += .01;
-
-	// 		if (r > 1) {
-	// 			r = 0;
-	// 		}
-	// 		if (g > 1) {
-	// 			g = 0;
-	// 		}
-	// 		if (b > 1) {
-	// 			b = 0;
-	// 		}
-
-	// 		if ( (i % 10) == 0) {
-	// 			r += .2;
-	// 			g += .3;
-	// 			b += .4;
-	// 		}
-	// 	}
-
-	// glEnd();
-
-		// glBegin( GL_QUADS );
-
-			// glColor3f( 1., 0., 0. );
-
-				// glNormal3f( 1., 0., 0. );
-				// 	glVertex3f(  dx, -dy,  dz );
-				// 	glVertex3f(  dx, -dy, -dz );
-				// 	glVertex3f(  dx,  dy, -dz );
-				// 	glVertex3f(  dx,  dy,  dz );
-
-		// 		glNormal3f(-1., 0., 0.);
-		// 			glVertex3f( -dx, -dy,  dz);
-		// 			glVertex3f( -dx,  dy,  dz );
-		// 			glVertex3f( -dx,  dy, -dz );
-		// 			glVertex3f( -dx, -dy, -dz );
-
-		// 	glColor3f( 0., 1., 0. );
-
-		// 		glNormal3f(0., 1., 0.);
-		// 			glVertex3f( -dx,  dy,  dz );
-		// 			glVertex3f(  dx,  dy,  dz );
-		// 			glVertex3f(  dx,  dy, -dz );
-		// 			glVertex3f( -dx,  dy, -dz );
-
-		// 		glNormal3f(0., -1., 0.);
-		// 			glVertex3f( -dx, -dy,  dz);
-		// 			glVertex3f( -dx, -dy, -dz );
-		// 			glVertex3f(  dx, -dy, -dz );
-		// 			glVertex3f(  dx, -dy,  dz );
-
-		// 	glColor3f(0., 0., 1.);
-
-		// 		glNormal3f(0., 0., 1.);
-		// 			glVertex3f(-dx, -dy, dz);
-		// 			glVertex3f( dx, -dy, dz);
-		// 			glVertex3f( dx,  dy, dz);
-		// 			glVertex3f(-dx,  dy, dz);
-
-		// 		glNormal3f(0., 0., -1.);
-		// 			glVertex3f(-dx, -dy, -dz);
-		// 			glVertex3f(-dx,  dy, -dz);
-		// 			glVertex3f( dx,  dy, -dz);
-		// 			glVertex3f( dx, -dy, -dz);
-
-		// glEnd( );
-
-	glEndList( );
 
 
 	// create the axes:
