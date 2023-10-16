@@ -414,7 +414,7 @@ Display( )
 	if (nowInOrOut == 0) {
 		gluLookAt( 0, 0, 5,    0, 0, 0,    0, 1, 0 );		// outside view
 	} else {
-		gluLookAt( 0, 0, 0,    1, 0, 0,    0, 1, 0 );		// inside?
+		gluLookAt( 0, 0, 0,    1, 0, 0,    0, 1, 0 );		// inside view
 	}
 
 	// rotate the scene:
@@ -480,7 +480,7 @@ Display( )
 	glPushMatrix();
 
 	// // 2nd horse
-	glRotatef(360*Time, 0, 1, 0);		// rotate in circle
+	glRotatef(360*Time, 0, 1, 0);		// rotate horse in circle
 	glRotatef(theta1, .75, 0, 1);			// rock and move (up and down) horse
 	glTranslatef(0, 0, 2);
 	glCallList( displayHorse );
@@ -489,7 +489,7 @@ Display( )
 	glPushMatrix();
 
 	// 3rd horse
-	glRotatef(360*Time, 0, 1, 0);		// rotate in circle
+	glRotatef(360*Time, 0, 1, 0);		// rotate horse in circle
 	glRotatef(theta2, 1.33, 0, .66);		// rock and move (up and down) horse
 	glTranslatef(-2, 0, 0);
 	glRotatef(-90, 0, 1, 0);			// have to turn horse so it's facing the correct way before beginning rotation.
@@ -499,7 +499,7 @@ Display( )
 	glPushMatrix();
 
 	// 4th horse
-	glRotatef(360*Time, 0, 1, 0);		// rotate in circle
+	glRotatef(360*Time, 0, 1, 0);		// rotate horse in circle
 	glRotatef(theta3, .4, 0, 1);		// rock and move (up and down) horse
 	glTranslatef(0, 0, -2);
 	glRotatef(180, 0, 1, 0);			// have to turn horse so it's facing the correct way before beginning rotation.
