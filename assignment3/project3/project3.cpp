@@ -11,6 +11,19 @@
 #define F_PI_2		((float)(F_PI/2.f))
 #endif
 
+#define XSIDE		100						// length of the x side of the grid
+#define X0			(-XSIDE/2.)				// where one side starts
+#define NX			1000					// how many points in x
+#define DX			( XSIDE/(float)NX )		// change in x between the points
+
+#define YGRID		0.f						
+
+#define ZSIDE		100						// length of the z side of the grid
+#define Z0			(-ZSIDE/2.)				// where one side starts
+#define NZ			1000					// how many points in z
+#define DZ			( ZSIDE/(float)NZ )		// change in z between the points
+
+
 
 #include "glew.h"
 #include <OpenGL/gl.h>
@@ -36,7 +49,7 @@
 
 // title of these windows:
 
-const char *WINDOWTITLE = "Project 2 -- Byron Magofna";
+const char *WINDOWTITLE = "Project 3 -- Byron Magofna";
 const char *GLUITITLE   = "User Interface Window";
 
 // what the glui package defines as true and false:
@@ -83,7 +96,7 @@ const int RIGHT  = 1;
 
 // global variables for the horse and circle display lists
 const int NUMSEGS = 100;
-const double RADIUS = 2;
+const double RADIUS = 5;
 float dang = 2 * M_PI / (float) (NUMSEGS - 1);
 float ang = 0;
 
@@ -177,8 +190,12 @@ const int MS_PER_CYCLE = 10000;		// 10000 milliseconds = 10 seconds
 int		ActiveButton;			// current button that is down
 GLuint	AxesList;				// list to hold the axes
 int		AxesOn;					// != 0 means to draw the axes
-GLuint	displayHorse;			// object display list
-GLuint  circle;					// object display list
+GLuint	MaximusDL;				// object display list
+GLuint	DuckDL;
+GLuint	CatDL;
+GLuint  GridDL;					// object display list
+GLuint	Circle;					// object display list
+GLuint	Sphere;					// object display list
 int		DebugOn;				// != 0 means to print debugging info
 int		DepthCueOn;				// != 0 means to use intensity depth cueing
 int		DepthBufferOn;			// != 0 means to use the z-buffer
@@ -192,6 +209,8 @@ int		ShadowsOn;				// != 0 means to turn shadows on
 float	Time;					// used for animation, this has a value between 0. and 1.
 int		Xmouse, Ymouse;			// mouse values
 float	Xrot, Yrot;				// rotation angles in degrees
+float	r = 1, g = 1, b = 1;	// color values
+float	deg = 30;				// decides the angle for the light sphere - starts with a spotlight
 
 
 // function prototypes:
@@ -272,16 +291,16 @@ MulArray3(float factor, float a, float b, float c )
 
 // these are here for when you need them -- just uncomment the ones you need:
 
-//#include "setmaterial.cpp"
-//#include "setlight.cpp"
-//#include "osusphere.cpp"
-//#include "osucone.cpp"
+#include "setmaterial.cpp"
+#include "setlight.cpp"
+#include "osusphere.cpp"
+// #include "osucone.cpp"
 //#include "osutorus.cpp"
 //#include "bmptotexture.cpp"
 #include "loadobjfile.cpp"
 //#include "keytime.cpp"
 //#include "glslprogram.cpp"
-#include "CarouselHorse.obj"
+// #include "CarouselHorse.obj"
 
 
 
@@ -337,10 +356,6 @@ Animate( )
 {
 	// put animation stuff in here -- change some global variables for Display( ) to find:
 
-	// for(int i = 0; i < NUMSEGS; i++) {
-	// 	glTranslatef( RADIUS*cos(ang), 0, RADIUS*sin(ang) );
-	// 	ang += dang;
-	// }
 
 	int ms = glutGet(GLUT_ELAPSED_TIME);
 	ms %= MS_PER_CYCLE;							// makes the value of ms between 0 and MS_PER_CYCLE-1
@@ -359,8 +374,7 @@ Animate( )
 
 // draw the complete scene:
 
-void
-Display( )
+void Display( )
 {
 	if (DebugOn != 0)
 		fprintf(stderr, "Starting Display.\n");
@@ -378,10 +392,16 @@ Display( )
 		glDisable( GL_DEPTH_TEST );
 #endif
 
+	// enable lighting
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, MulArray3(.1, 1., 1., 1.));
 
-	// specify shading to be flat:
+	glEnable(GL_NORMALIZE);
 
-	glShadeModel( GL_FLAT );
+	// specify shading to be flat or smooth:
+
+	glShadeModel( GL_SMOOTH );
 
 	// set the viewport to be a square centered in the window:
 
@@ -412,7 +432,7 @@ Display( )
 
 	// set the eye position, look-at position, and up-vector:
 	if (nowInOrOut == 0) {
-		gluLookAt( 0, 0, 5,    0, 0, 0,    0, 1, 0 );		// outside view
+		gluLookAt( 13, 13, 13,    0, 0, 0,    0, 1, 0 );		// outside view
 	} else {
 		gluLookAt( 0, 0, 0,    1, 0, 0,    0, 1, 0 );		// inside view
 	}
@@ -454,66 +474,92 @@ Display( )
 
 	// since we are using glScalef( ), be sure the normals get unitized:
 
-	glEnable( GL_NORMALIZE );
 
 
-	// draw the horse object by calling up its display list:
 
-	glCallList( circle );
+	//----------------------------------------------------Proj3 Code----------------------------------------------------
+	// glEnable(GL_COLOR_MATERIAL);
+
+	// draw the grid and light sphere
+
+	glCallList( GridDL );
+	// glCallList( Circle );
+
+	// apply lighting to the sphere
 
 	glPushMatrix();
 
-	float theta = 45 * sin(3 * (F_2_PI * Time));
-	float theta1 = 30 * sin(2 * (F_2_PI * Time));
-	float theta2 = 90 * sin(5 * (F_2_PI * Time));
-	float theta3 = 60 * sin(4 * (F_2_PI * Time));
+	glRotatef(360*Time, 0, 1, 0);
+	glLightfv( GL_LIGHT0, GL_AMBIENT, Array3(0., 0., 0.));
+	glLightfv( GL_LIGHT0, GL_DIFFUSE, Array3(r, g, b));
+	glLightfv( GL_LIGHT0, GL_SPECULAR, Array3(r, g, b));
 
+	glLightf( GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.);
+	glLightf( GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.);
+	glLightf( GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0);
 
-	// // first horse
-	glRotatef(360*Time, 0, 1, 0);		// rotates horse in circle
-	glRotatef(theta, 1, 0, .5);			// rock and move (up and down) horse
-	glTranslatef(2, 0, 0);
-	glRotatef(90, 0, 1, 0);				// have to turn horse so it's facing the correct way before beginning rotation.
-	glCallList( displayHorse );
-
-	glPopMatrix();						// reset properties/attributes
-	glPushMatrix();
-
-	// // 2nd horse
-	glRotatef(360*Time, 0, 1, 0);		// rotate horse in circle
-	glRotatef(theta1, .75, 0, 1);			// rock and move (up and down) horse
-	glTranslatef(0, 0, 2);
-	glCallList( displayHorse );
-
-	glPopMatrix();						// reset properties/attributes
-	glPushMatrix();
-
-	// 3rd horse
-	glRotatef(360*Time, 0, 1, 0);		// rotate horse in circle
-	glRotatef(theta2, 1.33, 0, .66);		// rock and move (up and down) horse
-	glTranslatef(-2, 0, 0);
-	glRotatef(-90, 0, 1, 0);			// have to turn horse so it's facing the correct way before beginning rotation.
-	glCallList( displayHorse );
-
-	glPopMatrix();						// reset properties/attributes
-	glPushMatrix();
-
-	// 4th horse
-	glRotatef(360*Time, 0, 1, 0);		// rotate horse in circle
-	glRotatef(theta3, .4, 0, 1);		// rock and move (up and down) horse
-	glTranslatef(0, 0, -2);
-	glRotatef(180, 0, 1, 0);			// have to turn horse so it's facing the correct way before beginning rotation.
-	glCallList( displayHorse );
+	glLightfv( GL_LIGHT0, GL_POSITION, Array3(5, 10, 0));
+	glLightfv( GL_LIGHT0, GL_SPOT_DIRECTION, Array3(0, -10, 0));
+	glLightf( GL_LIGHT0, GL_SPOT_CUTOFF, deg);			// 180 is a normal point light
 
 	glPopMatrix();
+	glPushMatrix();
+
+	// draw the light sphere object by calling up its display list:
+
+	glDisable(GL_LIGHTING);
+	glRotatef(360*Time, 0, 1, 0);
+	glTranslatef(5, 10, 0);
+	glColor3f(r, g, b);
+	glCallList( Sphere );
+	glEnable(GL_LIGHTING);
+
+	glPopMatrix();
+	glPushMatrix();
+
+	// go on github to get the rotation algorithm back
+
+	// // first object
+	glTranslatef(6, 0, 0);
+	glRotatef(90, 0, 1, 0);				// have to turn object so it's facing the correct way before beginning rotation.
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, MulArray3(10, 1*r, 0*g, 0*b));
+	glMaterialfv(GL_FRONT, GL_AMBIENT, MulArray3(.5, 1*r, 0*g, 0*b));
+	glCallList( MaximusDL );
+
+	glPopMatrix();						// reset properties/attributes
+	glPushMatrix();
+
+	// // 2nd object
+	glTranslatef(0, 0, 6);
+	glRotatef(90, 0, 1, 0);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, MulArray3(.2, 0*r, 1*g, 0*b));
+	glMaterialfv(GL_FRONT, GL_AMBIENT, MulArray3(.5, 0*r, 1*g, 0*b));
+	glCallList( CatDL );
+
+	glPopMatrix();						// reset properties/attributes
+	glPushMatrix();
+
+	// 3rd object
+	glTranslatef(-3.5, 0, -3.5);
+	glRotatef(-130, 0, 1, 0);			// have to turn object so it's facing the correct way before beginning rotation.
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, MulArray3(.5, 0*r, 0*g, 1*b));
+	glMaterialfv(GL_FRONT, GL_AMBIENT, MulArray3(.5, 0*r, 0*g, 1*b));
+	glCallList( DuckDL );
+
+	glPopMatrix();						// reset properties/attributes
+
 
 #ifdef DEMO_Z_FIGHTING
 	if( DepthFightingOn != 0 )
 	{
 		glPushMatrix( );
 			glRotatef( 90.f,   0.f, 1.f, 0.f );
-			glCallList( circle );
-			glCallList( displayHorse );
+			glCallList( GridDL );
+			glCallList( Circle );
+			glCallList( Sphere );
+			glCallList( MaximusDL );
+			glCallList( CatDL );
+			glCallList( DuckDL );
 		glPopMatrix( );
 	}
 #endif
@@ -546,6 +592,7 @@ Display( )
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity( );
 	glColor3f( 1.f, 1.f, 1.f );
+	glDisable( GL_LIGHTING);
 	//DoRasterString( 5.f, 5.f, 0.f, (char *)"Text That Doesn't" );
 
 	// swap the double-buffered framebuffers:
@@ -892,41 +939,86 @@ InitLists( )
 		fprintf(stderr, "Starting InitLists.\n");
 
 
-
-	circle = glGenLists( 1 );
-	glNewList( circle, GL_COMPILE);
+	// creates grid
+	GridDL = glGenLists( 1 );
+	glNewList( GridDL, GL_COMPILE );
 		glPushMatrix();
-		glColor3f(0, 1, 0);
+		glColor3f(.8, .8, .8);
+		SetMaterial( 0.6f, 0.6f, 0.6f, 30.f );
+		glNormal3f( 0., 1., 0. );
+		for( int i = 0; i < NZ; i++ ) {
+			glBegin( GL_QUAD_STRIP );
+			for( int j = 0; j < NX; j++ ) {
+				glVertex3f( X0 + DX*(float)j, YGRID, Z0 + DZ*(float)(i+0) );
+				glVertex3f( X0 + DX*(float)j, YGRID, Z0 + DZ*(float)(i+1) );
+			}
+			glEnd( );
+		}
+		glPopMatrix();
+	glEndList();
+
+
+	// create dog object -- Maximus is my dog's name :)
+	MaximusDL = glGenLists(1);
+	glNewList(MaximusDL, GL_COMPILE);
+		glPushMatrix();
+		glNormal3f(1, 0, 0);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, MulArray3(.7, 1, 1, 1));
+		glMaterialf (GL_FRONT, GL_SHININESS, 1);
+		glMaterialfv(GL_FRONT, GL_EMISSION, Array3(0, 0, 0));
+		LoadObjFile((char*) "Maximus.obj");
+		glPopMatrix();
+	glEndList();
+
+
+		// create cat object
+	CatDL = glGenLists(1);
+	glNewList(CatDL, GL_COMPILE);
+		glPushMatrix();
+		glNormal3f(0, 1, 0);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, MulArray3(.7, 1, 1, 1));
+		glMaterialf (GL_FRONT, GL_SHININESS, 10);
+		glMaterialfv(GL_FRONT, GL_EMISSION, Array3(0, 0, 0));
+		LoadObjFile((char*) "cat.obj");
+		glPopMatrix();
+	glEndList();
+
+
+	// create duck object
+	DuckDL = glGenLists(1);
+	glNewList(DuckDL, GL_COMPILE);
+		glPushMatrix();
+		glNormal3f(0, 0, 1);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, MulArray3(.7, 1, 1, 1));
+		glMaterialf (GL_FRONT, GL_SHININESS, 5);
+		glMaterialfv(GL_FRONT, GL_EMISSION, Array3(0, 0, 0));
+		LoadObjFile((char*) "duck.obj");
+		glPopMatrix();
+	glEndList();
+
+
+	Circle = glGenLists( 1 );
+	glNewList( Circle, GL_COMPILE);
+		glPushMatrix();
+		glColor3f(1, 1, 1);
+		int Y_height = 8;
 		glBegin(GL_LINE_STRIP);
 			for(int i = 0; i < NUMSEGS; i++) {
-				glVertex3f( RADIUS*cos(ang), 0, RADIUS*sin(ang) );
+				glVertex3f( RADIUS*cos(ang), Y_height, RADIUS*sin(ang) );
 				ang += dang;
 			}
 		glEnd();
 	glPopMatrix();
 	glEndList();
 
-	glEnd();
-	glRotatef(360, 0, 0, 0);
 
-	displayHorse = glGenLists( 1 );
-	glNewList( displayHorse, GL_COMPILE );
-		glPushMatrix( );
-			
-			glRotatef(90.f, 0., 1., 0.);
-			glTranslatef( 0.f, -1.1f, 0.f);
-			glColor3f( 1.f, 1.f, 0.f);		// yellow
-
-			glBegin( GL_LINES );
-				for( int i=0; i < HORSEnedges; i++ ) {
-					struct point p0 = HORSEpoints[ HORSEedges[i].p0 ];
-					struct point p1 = HORSEpoints[ HORSEedges[i].p1 ];
-					glVertex3f( p0.x, p0.y, p0.z );
-					glVertex3f( p1.x, p1.y, p1.z );
-				}
-			glEnd();
+	Sphere = glGenLists(1);
+	glNewList( Sphere, GL_COMPILE );
+		glPushMatrix();
+		OsuSphere(.33, 100, 100);
 		glPopMatrix();
 	glEndList();
+
 
 
 
@@ -958,7 +1050,13 @@ Keyboard( unsigned char c, int x, int y )
 
 		case 'p':
 		case 'P':
-			NowProjection = PERSP;
+			// NowProjection = PERSP;		// turns into perspective view
+			deg = 180;
+			break;
+
+		case 's':
+		case 'S':
+			deg = 30;
 			break;
 
 		case 'q':
@@ -966,6 +1064,43 @@ Keyboard( unsigned char c, int x, int y )
 		case ESCAPE:
 			DoMainMenu( QUIT );	// will not return here
 			break;				// happy compiler
+
+		case 'w':
+		case 'W':
+			r = 1;
+			g = 1;
+			b = 1;
+			break;
+
+		case 'r':
+		case 'R':
+			r = 1;
+			g = 0;
+			b = 0;
+			break;
+
+		case 'g':
+		case 'G':
+			r = 0;
+			g = 1;
+			b = 0;
+			break;
+
+		case 'b':
+		case 'B':
+			r = 0;
+			g = 0;
+			b = 1;
+			break;
+		
+		case 'y':
+		case 'Y':
+			r = 1;
+			g = 1;
+			b = 0;
+			break;
+		
+
 
 		default:
 			fprintf( stderr, "Don't know what to do with keyboard hit: '%c' (0x%0x)\n", c, c );
