@@ -11,16 +11,16 @@
 #define F_PI_2		((float)(F_PI/2.f))
 #endif
 
-#define XSIDE		100						// length of the x side of the grid
+#define XSIDE		10						// length of the x side of the grid
 #define X0			(-XSIDE/2.)				// where one side starts
-#define NX			1000					// how many points in x
+#define NX			100					// how many points in x
 #define DX			( XSIDE/(float)NX )		// change in x between the points
 
 #define YGRID		0.f						
 
-#define ZSIDE		100						// length of the z side of the grid
+#define ZSIDE		10						// length of the z side of the grid
 #define Z0			(-ZSIDE/2.)				// where one side starts
-#define NZ			1000					// how many points in z
+#define NZ			100					// how many points in z
 #define DZ			( ZSIDE/(float)NZ )		// change in z between the points
 
 
@@ -49,7 +49,7 @@
 
 // title of these windows:
 
-const char *WINDOWTITLE = "Project 3 -- Byron Magofna";
+const char *WINDOWTITLE = "Project 4 -- Byron Magofna";
 const char *GLUITITLE   = "User Interface Window";
 
 // what the glui package defines as true and false:
@@ -94,11 +94,12 @@ const int LEFT   = 4;
 const int MIDDLE = 2;
 const int RIGHT  = 1;
 
-// global variables for the horse and circle display lists
+// global variables for projects
 const int NUMSEGS = 100;
 const double RADIUS = 5;
 float dang = 2 * M_PI / (float) (NUMSEGS - 1);
 float ang = 0;
+const int MSEC = 10000;
 
 // which projection:
 
@@ -191,8 +192,6 @@ int		ActiveButton;			// current button that is down
 GLuint	AxesList;				// list to hold the axes
 int		AxesOn;					// != 0 means to draw the axes
 GLuint	MaximusDL;				// object display list
-GLuint	DuckDL;
-GLuint	CatDL;
 GLuint  GridDL;					// object display list
 GLuint	Circle;					// object display list
 GLuint	Sphere;					// object display list
@@ -298,9 +297,22 @@ MulArray3(float factor, float a, float b, float c )
 //#include "osutorus.cpp"
 //#include "bmptotexture.cpp"
 #include "loadobjfile.cpp"
-//#include "keytime.cpp"
+#include "keytime.cpp"
 //#include "glslprogram.cpp"
-// #include "CarouselHorse.obj"
+
+// global Keytime Vars:
+Keytimes lightIntensity;
+
+Keytimes viewPosZ;
+Keytimes viewPosX;
+
+Keytimes xPos;
+Keytimes zPos;
+Keytimes yPos;
+
+Keytimes red;
+Keytimes green;
+Keytimes blue;
 
 
 
@@ -379,6 +391,14 @@ void Display( )
 	if (DebugOn != 0)
 		fprintf(stderr, "Starting Display.\n");
 
+
+	// turn msec into the cycle ( 0 <= MSEC <= 1)
+	int msec = glutGet (GLUT_ELAPSED_TIME ) % MSEC;
+
+	// turn that into a time in seconds
+	float nowTime = (float)msec / 1000.;
+
+
 	// set which window we want to do the graphics into:
 	glutSetWindow( MainWindow );
 
@@ -394,8 +414,9 @@ void Display( )
 
 	// enable lighting
 	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, MulArray3(.1, 1., 1., 1.));
+	// glEnable(GL_LIGHT0);
+	// glLightModelfv(GL_LIGHT_MODEL_AMBIENT, MulArray3(.2, 1., 1., 1.));
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, MulArray3(lightIntensity.GetValue(nowTime), 1., 1., 1.));
 
 	glEnable(GL_NORMALIZE);
 
@@ -432,7 +453,13 @@ void Display( )
 
 	// set the eye position, look-at position, and up-vector:
 	if (nowInOrOut == 0) {
-		gluLookAt( 13, 13, 13,    0, 0, 0,    0, 1, 0 );		// outside view
+		// gluLookAt( 13, 13, 13,    0, 0, 0,    0, 1, 0 );		// outside view
+
+		int msec = glutGet (GLUT_ELAPSED_TIME ) % MSEC;
+		// turn that into a time in seconds
+		float nowTime = (float)msec / 1000.;
+
+		gluLookAt(viewPosX.GetValue( nowTime ), 7, viewPosZ.GetValue(nowTime), 	0, 0, 0,	0, 1, 0 );
 	} else {
 		gluLookAt( 0, 0, 0,    1, 0, 0,    0, 1, 0 );		// inside view
 	}
@@ -468,8 +495,10 @@ void Display( )
 
 	if( AxesOn != 0 )
 	{
+		glDisable(GL_LIGHTING);
 		glColor3fv( &Colors[NowColor][0] );
 		glCallList( AxesList );
+		glEnable(GL_LIGHTING);
 	}
 
 	// since we are using glScalef( ), be sure the normals get unitized:
@@ -477,76 +506,19 @@ void Display( )
 
 
 
-	//----------------------------------------------------Proj3 Code----------------------------------------------------
-	// glEnable(GL_COLOR_MATERIAL);
+	//----------------------------------------------------Proj4 Code----------------------------------------------------
 
-	// draw the grid and light sphere
-
-	glCallList( GridDL );
-	// glCallList( Circle );
-
-	// apply lighting to the sphere
+	glCallList(GridDL);
 
 	glPushMatrix();
-
-	glRotatef(360*Time, 0, 1, 0);
-	glLightfv( GL_LIGHT0, GL_AMBIENT, Array3(0., 0., 0.));
-	glLightfv( GL_LIGHT0, GL_DIFFUSE, Array3(r, g, b));
-	glLightfv( GL_LIGHT0, GL_SPECULAR, Array3(r, g, b));
-
-	glLightf( GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.);
-	glLightf( GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.);
-	glLightf( GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0);
-
-	glLightfv( GL_LIGHT0, GL_POSITION, Array3(5, 10, 0));
-	glLightfv( GL_LIGHT0, GL_SPOT_DIRECTION, Array3(0, -10, 0));
-	glLightf( GL_LIGHT0, GL_SPOT_CUTOFF, deg);			// 180 is a normal point light
-
+		glTranslatef( xPos.GetValue( nowTime ), yPos.GetValue( nowTime ), zPos.GetValue( nowTime ) );
+		glTranslatef(0.4, 0.5, 0.4);
+		glEnable(GL_LIGHT0);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, MulArray3(.2, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, MulArray3(.5, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
+		glCallList( Sphere );
+		glDisable(GL_LIGHT0);
 	glPopMatrix();
-	glPushMatrix();
-
-	// draw the light sphere object by calling up its display list:
-
-	glDisable(GL_LIGHTING);
-	glRotatef(360*Time, 0, 1, 0);
-	glTranslatef(5, 10, 0);
-	glColor3f(r, g, b);
-	glCallList( Sphere );
-	glEnable(GL_LIGHTING);
-
-	glPopMatrix();
-	glPushMatrix();
-
-	// go on github to get the rotation algorithm back
-
-	// // first object
-	glTranslatef(6, 0, 0);
-	glRotatef(90, 0, 1, 0);				// have to turn object so it's facing the correct way before beginning rotation.
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, MulArray3(10, 1*r, 0*g, 0*b));
-	glMaterialfv(GL_FRONT, GL_AMBIENT, MulArray3(.5, 1*r, 0*g, 0*b));
-	glCallList( MaximusDL );
-
-	glPopMatrix();						// reset properties/attributes
-	glPushMatrix();
-
-	// // 2nd object
-	glTranslatef(0, 0, 6);
-	glRotatef(90, 0, 1, 0);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, MulArray3(.2, 0*r, 1*g, 0*b));
-	glMaterialfv(GL_FRONT, GL_AMBIENT, MulArray3(.5, 0*r, 1*g, 0*b));
-	glCallList( CatDL );
-
-	glPopMatrix();						// reset properties/attributes
-	glPushMatrix();
-
-	// 3rd object
-	glTranslatef(-3.5, 0, -3.5);
-	glRotatef(-130, 0, 1, 0);			// have to turn object so it's facing the correct way before beginning rotation.
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, MulArray3(.5, 0*r, 0*g, 1*b));
-	glMaterialfv(GL_FRONT, GL_AMBIENT, MulArray3(.5, 0*r, 0*g, 1*b));
-	glCallList( DuckDL );
-
-	glPopMatrix();						// reset properties/attributes
 
 
 #ifdef DEMO_Z_FIGHTING
@@ -555,11 +527,8 @@ void Display( )
 		glPushMatrix( );
 			glRotatef( 90.f,   0.f, 1.f, 0.f );
 			glCallList( GridDL );
-			glCallList( Circle );
 			glCallList( Sphere );
-			glCallList( MaximusDL );
-			glCallList( CatDL );
-			glCallList( DuckDL );
+			// glCallList( MaximusDL );
 		glPopMatrix( );
 	}
 #endif
@@ -923,7 +892,78 @@ InitGraphics( )
 #endif
 
 	// all other setups go here, such as GLSLProgram and KeyTime setups:
+	// define keytime vars
+	xPos.Init( );	// keytime 1
+        xPos.AddTimeValue(  0,  3 );
+        xPos.AddTimeValue(  2,  0 );
+        xPos.AddTimeValue(  4,  1.5 );
+        xPos.AddTimeValue(  6,  2.5 );
+        xPos.AddTimeValue(  8,  2);
+        xPos.AddTimeValue(  10, 0 );
 
+	yPos.Init();	// keytime 2
+		yPos.AddTimeValue( 	0,  3);
+        yPos.AddTimeValue(  2,  0 );
+        yPos.AddTimeValue(  4,  1.5);
+        yPos.AddTimeValue(  6,  2.5 );
+        yPos.AddTimeValue(  8,  2 );
+        yPos.AddTimeValue( 	10, 0 );
+
+	zPos.Init();	// keytime 3
+		zPos.AddTimeValue( 	0,  3);
+        zPos.AddTimeValue(  2,  0 );
+        zPos.AddTimeValue(  4,  1.5 );
+        zPos.AddTimeValue(  6,  2.5 );
+        zPos.AddTimeValue(  8,  2 );
+        zPos.AddTimeValue( 	10, 0 );
+
+	viewPosZ.Init();	// keytime 4
+		viewPosZ.AddTimeValue( 0,  13 );
+		viewPosZ.AddTimeValue( 2,  12 );
+		viewPosZ.AddTimeValue( 4,  11 );
+		viewPosZ.AddTimeValue( 6,  10 );
+		viewPosZ.AddTimeValue( 8,  9 );
+		viewPosZ.AddTimeValue( 10, 8 );
+
+	viewPosX.Init();	// keytime 5
+		viewPosX.AddTimeValue( 0,  0 );
+		viewPosX.AddTimeValue( 2,  1 );
+		viewPosX.AddTimeValue( 4,  2 );
+		viewPosX.AddTimeValue( 6,  3 );
+		viewPosX.AddTimeValue( 8,  4 );
+		viewPosX.AddTimeValue( 10, 5 );
+
+	lightIntensity.Init();	// keytime 6
+		lightIntensity.AddTimeValue(0, 0);
+		lightIntensity.AddTimeValue(2, 1);
+		lightIntensity.AddTimeValue(4, .3);
+		lightIntensity.AddTimeValue(6, .4);
+		lightIntensity.AddTimeValue(8, .5);
+		lightIntensity.AddTimeValue(10, .2);
+
+	red.Init();	//keytime 7
+		red.AddTimeValue(0, 0);
+		red.AddTimeValue(2, 1);
+		red.AddTimeValue(4, .2);
+		red.AddTimeValue(6, .8);
+		red.AddTimeValue(8, .4);
+		red.AddTimeValue(10, 1);
+
+	green.Init(); 	// keytime 8
+		green.AddTimeValue(0, 1);
+		green.AddTimeValue(2, .5);
+		green.AddTimeValue(4, 0);
+		green.AddTimeValue(6, .2);
+		green.AddTimeValue(8, .6);
+		green.AddTimeValue(10, 1);
+
+	blue.Init();	// keytime 8
+		blue.AddTimeValue(0, 1);
+		blue.AddTimeValue(2, 1);
+		blue.AddTimeValue(4, 0);
+		blue.AddTimeValue(6, .3);
+		blue.AddTimeValue(8, .8);
+		blue.AddTimeValue(10, 0);
 }
 
 
@@ -938,12 +978,11 @@ InitLists( )
 	if (DebugOn != 0)
 		fprintf(stderr, "Starting InitLists.\n");
 
-
 	// creates grid
 	GridDL = glGenLists( 1 );
 	glNewList( GridDL, GL_COMPILE );
 		glPushMatrix();
-		glColor3f(.8, .8, .8);
+		glColor3f(.5, .5, .5);
 		SetMaterial( 0.6f, 0.6f, 0.6f, 30.f );
 		glNormal3f( 0., 1., 0. );
 		for( int i = 0; i < NZ; i++ ) {
@@ -957,44 +996,17 @@ InitLists( )
 		glPopMatrix();
 	glEndList();
 
-
-	// create dog object -- Maximus is my dog's name :)
-	MaximusDL = glGenLists(1);
-	glNewList(MaximusDL, GL_COMPILE);
-		glPushMatrix();
-		glNormal3f(1, 0, 0);
-		glMaterialfv(GL_FRONT, GL_SPECULAR, MulArray3(.7, 1, 1, 1));
-		glMaterialf (GL_FRONT, GL_SHININESS, 1);
-		glMaterialfv(GL_FRONT, GL_EMISSION, Array3(0, 0, 0));
-		LoadObjFile((char*) "Maximus.obj");
-		glPopMatrix();
-	glEndList();
-
-
-		// create cat object
-	CatDL = glGenLists(1);
-	glNewList(CatDL, GL_COMPILE);
-		glPushMatrix();
-		glNormal3f(0, 1, 0);
-		glMaterialfv(GL_FRONT, GL_SPECULAR, MulArray3(.7, 1, 1, 1));
-		glMaterialf (GL_FRONT, GL_SHININESS, 10);
-		glMaterialfv(GL_FRONT, GL_EMISSION, Array3(0, 0, 0));
-		LoadObjFile((char*) "cat.obj");
-		glPopMatrix();
-	glEndList();
-
-
-	// create duck object
-	DuckDL = glGenLists(1);
-	glNewList(DuckDL, GL_COMPILE);
-		glPushMatrix();
-		glNormal3f(0, 0, 1);
-		glMaterialfv(GL_FRONT, GL_SPECULAR, MulArray3(.7, 1, 1, 1));
-		glMaterialf (GL_FRONT, GL_SHININESS, 5);
-		glMaterialfv(GL_FRONT, GL_EMISSION, Array3(0, 0, 0));
-		LoadObjFile((char*) "duck.obj");
-		glPopMatrix();
-	glEndList();
+	// // create dog object -- Maximus is my dog's name :)
+	// MaximusDL = glGenLists(1);
+	// glNewList(MaximusDL, GL_COMPILE);
+	// 	glPushMatrix();
+	// 	glNormal3f(1, 0, 0);
+	// 	glMaterialfv(GL_FRONT, GL_SPECULAR, MulArray3(.7, 1, 1, 1));
+	// 	glMaterialf (GL_FRONT, GL_SHININESS, 1);
+	// 	glMaterialfv(GL_FRONT, GL_EMISSION, Array3(0, 0, 0));
+	// 	LoadObjFile((char*) "Maximus.obj");
+	// 	glPopMatrix();
+	// glEndList();
 
 
 	Circle = glGenLists( 1 );
@@ -1015,7 +1027,7 @@ InitLists( )
 	Sphere = glGenLists(1);
 	glNewList( Sphere, GL_COMPILE );
 		glPushMatrix();
-		OsuSphere(.33, 100, 100);
+		OsuSphere(.5, 100, 100);
 		glPopMatrix();
 	glEndList();
 
