@@ -224,7 +224,7 @@ int		DepthFightingOn;		// != 0 means to force the creation of z-fighting
 int		MainWindow;				// window id for main graphics window
 int		NowColor;				// index into Colors[ ]
 int		NowProjection;			// ORTHO or PERSP
-int		nowInOrOut;				// inside or outside perspective
+int		farOrClose;				// close or far perspective
 float	Scale;					// scaling factor
 int		ShadowsOn;				// != 0 means to turn shadows on
 float	Time;					// used for animation, this has a value between 0. and 1.
@@ -422,7 +422,6 @@ void Display( )
 
 	// enable lighting
 	glEnable(GL_LIGHTING);
-	// glEnable(GL_LIGHT0);
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, MulArray3(.8, 1., 1., 1.));
 	glEnable(GL_NORMALIZE);
 
@@ -458,16 +457,10 @@ void Display( )
 
 
 	// set the eye position, look-at position, and up-vector:
-	if (nowInOrOut == 0) {
-		gluLookAt( 15, 15, 15,    0, 0, 0,    0, 1, 0 );		// outside view
-
-		// int msec = glutGet (GLUT_ELAPSED_TIME ) % MSEC;
-		// turn that into a time in seconds
-		// float nowTime = (float)msec / 1000.;
-
-	    // gluLookAt(viewPosX.GetValue( nowTime ), 7, viewPosZ.GetValue(nowTime), 	0, 0, 0,	0, 1, 0 );
+	if (farOrClose == 1) {
+		gluLookAt( 0, 20, 20,    0, 0, 0,    0, 1, 0 );		// far view
 	} else {
-		gluLookAt( 0, 0, 0,    1, 0, 0,    0, 1, 0 );		// inside view
+		gluLookAt( 0, 6, 6,    0, -6, -4,    0, 1, 0 );		// close view
 	}
 
 	// rotate the scene:
@@ -518,23 +511,58 @@ void Display( )
 
 	// glEnable(GL_TEXTURE_2D);
 
-	int toggleMode = toggle % 3;
+	glPushMatrix();
+
+	glRotatef(360*Time, 0, 1, 0);
+	glLightfv( GL_LIGHT0, GL_AMBIENT, Array3(0., 0., 0.));
+	glLightfv( GL_LIGHT0, GL_DIFFUSE, Array3(r, g, b));
+	glLightfv( GL_LIGHT0, GL_SPECULAR, Array3(r, g, b));
+
+	glLightf( GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.);
+	glLightf( GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.);
+	glLightf( GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0);
+
+	glLightfv( GL_LIGHT0, GL_POSITION, Array3(10, 15, 10));
+	glLightfv( GL_LIGHT0, GL_SPOT_DIRECTION, Array3(2, -15, 2));
+	glLightf( GL_LIGHT0, GL_SPOT_CUTOFF, 180);	
+
+	glPopMatrix();
+	glPushMatrix();
+        glEnable(GL_LIGHT0);
+		glRotatef(360*Time, 0, 1, 0);
+		glTranslatef(10, 15, 10);
+		glScalef(.5, .5, .5);
+		glCallList(Sphere);
+		glDisable(GL_LIGHT0);
+	glPopMatrix();
+
+	glPushMatrix();
+
+	int toggleMode = toggle % 3;		// find mod 3 of the toggle count to find which mode to switch to.
 	switch( toggleMode ) {
 		case 0:
-			glDisable(GL_TEXTURE_2D);
+			glPushMatrix();
+				glDisable(GL_TEXTURE_2D);		// no texture on objects
+			glPopMatrix();
 			break;
 
 		case 1:
-			glEnable(GL_TEXTURE_2D);
-			glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
+			glPushMatrix();
+				glEnable(GL_TEXTURE_2D);
+				glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );	// texture replaces the spheres color
+			glPopMatrix();
 			break;
 
 		case 2:
-			glEnable(GL_TEXTURE_2D);
-			glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+			glPushMatrix();
+				glEnable(GL_TEXTURE_2D);
+				glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );	// spheres color "shines" through texture
+			glPopMatrix();
 			break;
 	}
 
+	glPopMatrix();
+	glPushMatrix();
 
     switch( currentPlanetFlag ) {
 
@@ -618,6 +646,8 @@ void Display( )
     default:
         currentPlanetFlag = 0;
     }
+
+	glPopMatrix();
 
 
 #ifdef DEMO_Z_FIGHTING
@@ -779,7 +809,7 @@ DoProjectMenu( int id )
 }
 
 void doInOrOut(int id) {
-	nowInOrOut = id;
+	farOrClose = id;
 
 	glutSetWindow( MainWindow);
 	glutPostRedisplay();
@@ -1235,10 +1265,20 @@ Keyboard( unsigned char c, int x, int y )
 			NowProjection = ORTHO;
 			break;
 
-		case 'p':
-		case 'P':
-			// NowProjection = PERSP;		// turns into perspective view
-			deg = 180;          // switch to pointlight
+		// case 'p':
+		// case 'P':
+		// 	// NowProjection = PERSP;		// turns into perspective view
+		// 	deg = 180;          // switch to pointlight
+		// 	break;
+
+		case 'c':
+		case 'C':
+			farOrClose = 0;
+			break;
+
+		case 'f':
+		case 'F':
+			farOrClose = 1;
 			break;
 
         case 'e':
