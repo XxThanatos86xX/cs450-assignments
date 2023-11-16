@@ -109,6 +109,7 @@ const int saturnFlag    = 4;
 const int uranusFlag    = 5;
 const int neptuneFlag   = 6; 
 int currentPlanetFlag   = 0;
+int toggle				= 0;
 
 
 // which projection:
@@ -504,7 +505,7 @@ void Display( )
 		glDisable(GL_TEXTURE_2D);
 		glColor3fv( &Colors[NowColor][0] );
 		glCallList( AxesList );
-		glEnable(GL_TEXTURE_2D);
+		// glEnable(GL_TEXTURE_2D);
 		glEnable(GL_LIGHTING);
 	}
 
@@ -516,6 +517,25 @@ void Display( )
 	//----------------------------------------------------Proj4 Code----------------------------------------------------
 
 	// glEnable(GL_TEXTURE_2D);
+
+	int toggleMode = toggle % 3;
+	switch( toggleMode ) {
+		case 0:
+			glDisable(GL_TEXTURE_2D);
+			break;
+
+		case 1:
+			glEnable(GL_TEXTURE_2D);
+			glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
+			break;
+
+		case 2:
+			glEnable(GL_TEXTURE_2D);
+			glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+			break;
+	}
+
+
     switch( currentPlanetFlag ) {
 
     case earthFlag:
@@ -1297,7 +1317,11 @@ Keyboard( unsigned char c, int x, int y )
 			g = 1;
 			b = 0;
 			break;
-		
+
+		case 't':
+		case 'T':
+			toggle++;
+			break;
 
 
 		default:
