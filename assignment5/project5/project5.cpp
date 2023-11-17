@@ -570,8 +570,6 @@ void Display( )
         glPushMatrix();
             glEnable(GL_LIGHT0);
             glTranslatef( 2, 2, 2);
-    	    // glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, MulArray3(.2, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
-		    // glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, MulArray3(.5, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
             glCallList(earthDL);
             glDisable(GL_LIGHT0);
         glPopMatrix();
@@ -581,8 +579,6 @@ void Display( )
         glPushMatrix();
             glEnable(GL_LIGHT0);
             glTranslatef( 2, 2, 2);
-    	    // glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, MulArray3(.2, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
-		    // glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, MulArray3(.5, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
             glCallList(venusDL);
             glDisable(GL_LIGHT0);
         glPopMatrix();
@@ -592,8 +588,6 @@ void Display( )
         glPushMatrix();
             glEnable(GL_LIGHT0);
             glTranslatef( 2, 2, 2);
-    	    // glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, MulArray3(.2, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
-		    // glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, MulArray3(.5, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
             glCallList(marsDL);
             glDisable(GL_LIGHT0);
         glPopMatrix();
@@ -603,8 +597,6 @@ void Display( )
         glPushMatrix();
             glEnable(GL_LIGHT0);
             glTranslatef( 2, 2, 2);
-    	    // glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, MulArray3(.2, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
-		    // glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, MulArray3(.5, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
             glCallList(jupiterDL);
             glDisable(GL_LIGHT0);
         glPopMatrix();
@@ -614,8 +606,6 @@ void Display( )
         glPushMatrix();
             glEnable(GL_LIGHT0);
             glTranslatef( 2, 2, 2);
-    	    // glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, MulArray3(.2, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
-		    // glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, MulArray3(.5, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
             glCallList(saturnDL);
             glDisable(GL_LIGHT0);
         glPopMatrix();
@@ -625,8 +615,6 @@ void Display( )
         glPushMatrix();
             glEnable(GL_LIGHT0);
             glTranslatef( 2, 2, 2);
-    	    // glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, MulArray3(.2, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
-		    // glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, MulArray3(.5, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
             glCallList(uranusDL);
             glDisable(GL_LIGHT0);
         glPopMatrix();
@@ -636,8 +624,6 @@ void Display( )
         glPushMatrix();
             glEnable(GL_LIGHT0);
             glTranslatef( 2, 2, 2);
-    	    // glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, MulArray3(.2, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
-		    // glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, MulArray3(.5, red.GetValue( nowTime ), green.GetValue(nowTime), blue.GetValue(nowTime)));
             glCallList(neptuneDL);
             glDisable(GL_LIGHT0);
         glPopMatrix();
